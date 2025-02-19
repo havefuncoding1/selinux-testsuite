@@ -67,6 +67,17 @@ ok( $result eq 0 );
 $result = system "runcon -t test_bpf_t $basedir/bpf_test -p $v";
 ok( $result eq 0 );
 
+# BPF map token
+# $result = system "runcon -t test_bpf_t $basedir/token_test map_token";
+$result = system "$basedir/token_test map_token";
+ok ( $result eq 0 );
+
+$result = system "$basedir/token_test btf_token";
+ok ( $result eq 0 );
+
+$result = system "$basedir/token_test prog_token";
+ok ( $result eq 0 );
+
 # Deny map_create permission
 $result =
   system "runcon -t test_bpf_deny_map_create_t $basedir/bpf_test -m $v 2>&1";

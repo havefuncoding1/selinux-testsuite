@@ -32,3 +32,11 @@ extern void bpf_setrlimit(void);
 					       .off   = 0,			\
 							.imm   = 0 })
 
+/* Raw code statement block */
+#define BPF_RAW_INSN(CODE, DST, SRC, OFF, IMM)			\
+	((struct bpf_insn) {					\
+		.code  = CODE,					\
+			.dst_reg = DST,					\
+				.src_reg = SRC,					\
+					.off   = OFF,					\
+						.imm   = IMM })
