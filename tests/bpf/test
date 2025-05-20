@@ -9,8 +9,10 @@ BEGIN {
 
     $test_bpf_count       = 7;
     $test_fdreceive_count = 4;
+    $test_bpf_token_count = 3;
 
-    $test_count = $test_bpf_count + $test_fdreceive_count;
+    $test_count = $test_bpf_count + $test_fdreceive_count + 
+                  $test_bpf_token_count;
 
     # allow info to be shown during tests
     $v = $ARGV[0];
@@ -67,8 +69,7 @@ ok( $result eq 0 );
 $result = system "runcon -t test_bpf_t $basedir/bpf_test -p $v";
 ok( $result eq 0 );
 
-# BPF map token
-# $result = system "runcon -t test_bpf_t $basedir/token_test map_token";
+# BPF token - BPF_MAP_CREATE, BPF_PROG_LOAD
 $result = system "runcon -t test_bpf_t $basedir/token_test map_token";
 ok ( $result eq 0 );
 
