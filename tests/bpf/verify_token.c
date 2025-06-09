@@ -167,7 +167,6 @@ static int create_bpffs_fd(void)
 static int materialize_bpffs_fd(int fs_fd, struct bpffs_opts *opts)
 {
 	int mnt_fd, err;
-WRITE_LOG("%s delegate_cmds %s", __FUNCTION__, opts->cmds_str);
 
 	/* set up token delegation mount options */
 	err = set_delegate_mask(fs_fd, "delegate_cmds", opts->cmds, opts->cmds_str);
@@ -184,8 +183,6 @@ WRITE_LOG("%s delegate_cmds %s", __FUNCTION__, opts->cmds_str);
 		return err;
 
 	/* instantiate FS object */
-	// TODO: ericsu - this call results in avc denial and requires 'allow test_bpf_t unlabeled_t:dir search;'
-	//				  confirm with Paul this is expected
 	err = sys_fsconfig(fs_fd, FSCONFIG_CMD_CREATE, NULL, NULL, 0);
 	if (err < 0)
 		return -errno;
@@ -413,7 +410,6 @@ cleanup:
 	zclose(bpffs_fd);
 	zclose(token_fd);
 
-	WRITE_LOG("%s terminating exit %d ...", __FUNCTION__, -err);
 	exit(-err);
 }
 
@@ -423,7 +419,6 @@ static int parent(int child_pid, struct bpffs_opts *bpffs_opts, int sock_fd) {
 	err = recvfd(sock_fd, &fs_fd);
 	if (!ASSERT_OK(err, "recv_bpffs_fd"))
 		goto cleanup;
-	WRITE_LOG("%s, received fs_fd %d", __FUNCTION__, fs_fd);
 
 	mnt_fd = materialize_bpffs_fd(fs_fd, bpffs_opts);
 	if (!ASSERT_GE(mnt_fd, 0, "materialize_bpffs_fd")) {
@@ -431,26 +426,21 @@ static int parent(int child_pid, struct bpffs_opts *bpffs_opts, int sock_fd) {
 		goto cleanup;
 	}
 	zclose(fs_fd);
-	WRITE_LOG("%s mnt_fd %d", __FUNCTION__, mnt_fd);
 
 	err = sendfd(sock_fd, mnt_fd);
 	if (!ASSERT_OK(err, "send_mnt_fd"))
 		goto cleanup;
 	zclose(mnt_fd);
-	WRITE_LOG("%s mnt_fd sent", __FUNCTION__);
 
 	// TODO: ericsu - below recvfd causes a runtime 'Segmentation fault'. why???
 	// err = recvfd(sock_fd, &token_fd);
 	// if (!ASSERT_OK(err, "recv_token_fd"))
 	// 	goto cleanup;
 
-	WRITE_LOG("%s waiting for child_pid %d", __FUNCTION__, child_pid);
 	err = wait_for_pid(child_pid);
 	ASSERT_OK(err, "waitpid_child");
-	WRITE_LOG("%s wait_for_pid %d returned", __FUNCTION__, child_pid);
 
 cleanup:
-	WRITE_LOG("%s cleaning up ...", __FUNCTION__);
 	zclose(sock_fd);
 	zclose(fs_fd);
 	zclose(mnt_fd);
@@ -459,7 +449,6 @@ cleanup:
 	if (child_pid > 0)
 		(void)kill(child_pid, SIGKILL);
 
-	WRITE_LOG("%s exiting ...", __FUNCTION__);
 	return err;
 }
 
@@ -514,7 +503,6 @@ static int userns_map_create(int mnt_fd)
 		goto cleanup;
 	}
 
-	WRITE_LOG("%s succeeded", __FUNCTION__);
 cleanup:
 	zclose(token_fd);
 	zclose(map_fd);
@@ -552,7 +540,7 @@ static int userns_btf_load(int mnt_fd)
 		goto cleanup;
 
 	err = 0;
-	WRITE_LOG("%s succeeded", __FUNCTION__);
+
 cleanup:
 	btf__free(btf);
 	zclose(btf_fd);
@@ -587,13 +575,12 @@ static int userns_prog_load(int mnt_fd)
 	prog_fd = bpf_prog_load(BPF_PROG_TYPE_XDP, "token_prog", "GPL",
 				insns, insn_cnt, &prog_opts);
 	if (!ASSERT_GT(prog_fd, 0, "userns_prog_load/bpf_prog_load")) {
-WRITE_LOG("bpf_prog_load failed, prog_fd: %d", prog_fd);
 		err = -EPERM;
 		goto cleanup;
 	}
 
 	err = 0;
-	WRITE_LOG("%s succeeded", __FUNCTION__);
+
 cleanup:
 	zclose(prog_fd);
 	zclose(token_fd);
@@ -684,6 +671,5 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
-	WRITE_LOG("Terminating test execution ...");
 	return err;
 }
